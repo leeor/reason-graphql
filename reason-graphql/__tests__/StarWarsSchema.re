@@ -1,6 +1,17 @@
 open Belt.Result;
 open GraphqlPromise;
 
+module Error = {
+  type error =
+    | Unauthenticated;
+
+  let toString =
+    fun
+    | Unauthenticated => "Unauthenticated";
+};
+
+module Schema = Make(Error);
+
 module StarWars = StarWarsData;
 
 let episodeEnum =
@@ -8,9 +19,21 @@ let episodeEnum =
     makeEnum(
       "Episode",
       [
-        enumValue("NEWHOPE", ~value=StarWars.NEWHOPE, ~description="Released in 1977"),
-        enumValue("EMPIRE", ~value=StarWars.EMPIRE, ~description="Released in 1980"),
-        enumValue("JEDI", ~value=StarWars.JEDI, ~description="Released in 1983"),
+        enumValue(
+          "NEWHOPE",
+          ~value=StarWars.NEWHOPE,
+          ~description="Released in 1977",
+        ),
+        enumValue(
+          "EMPIRE",
+          ~value=StarWars.EMPIRE,
+          ~description="Released in 1980",
+        ),
+        enumValue(
+          "JEDI",
+          ~value=StarWars.JEDI,
+          ~description="Released in 1983",
+        ),
       ],
     )
   );
@@ -21,8 +44,16 @@ let rec characterInterface: Schema.abstractType('ctx, [ | `Character]) =
       [
         abstractField("id", nonnull(int), ~args=[]),
         abstractField("name", nonnull(string), ~args=[]),
-        abstractField("appearsIn", nonnull(list(nonnull(episodeEnum.fieldType))), ~args=[]),
-        abstractField("friends", nonnull(list(nonnull(character))), ~args=[]),
+        abstractField(
+          "appearsIn",
+          nonnull(list(nonnull(episodeEnum.fieldType))),
+          ~args=[],
+        ),
+        abstractField(
+          "friends",
+          nonnull(list(nonnull(character))),
+          ~args=[],
+        ),
       ]
     )
   )
@@ -39,10 +70,23 @@ and asCharacterInterface =
 and humanTypeLazy =
   lazy
     Schema.(
-      obj("Human", ~description="A humanoid creature in the Star Wars universe.", ~fields=_ =>
+      obj(
+        "Human",
+        ~description="A humanoid creature in the Star Wars universe.",
+        ~fields=_ =>
         [
-          field("id", nonnull(int), ~args=[], ~resolve=(_ctx, human: StarWars.human) => human.id),
-          field("name", nonnull(string), ~args=[], ~resolve=(_ctx, human: StarWars.human) =>
+          field(
+            "id",
+            nonnull(int),
+            ~args=[],
+            ~resolve=(_ctx, human: StarWars.human) =>
+            human.id
+          ),
+          field(
+            "name",
+            nonnull(string),
+            ~args=[],
+            ~resolve=(_ctx, human: StarWars.human) =>
             human.StarWars.name
           ),
           field(
@@ -59,10 +103,16 @@ and humanTypeLazy =
             ~resolve=(_ctx, human: StarWars.human) =>
             Js.Promise.(
               StarWars.getFriends(human.friends)
-              |> then_(list => resolve(Ok(Belt.List.map(list, asCharacterInterface))))
+              |> then_(list =>
+                   resolve(Ok(Belt.List.map(list, asCharacterInterface)))
+                 )
             )
           ),
-          field("homePlanet", string, ~args=[], ~resolve=(_ctx, human: StarWars.human) =>
+          field(
+            "homePlanet",
+            string,
+            ~args=[],
+            ~resolve=(_ctx, human: StarWars.human) =>
             human.homePlanet
           ),
         ]
@@ -72,10 +122,23 @@ and humanTypeLazy =
 and droidTypeLazy =
   lazy
     Schema.(
-      obj("Droid", ~description="A mechanical creature in the Star Wars universe.", ~fields=_ =>
+      obj(
+        "Droid",
+        ~description="A mechanical creature in the Star Wars universe.",
+        ~fields=_ =>
         [
-          field("id", nonnull(int), ~args=[], ~resolve=(_ctx, droid: StarWars.droid) => droid.id),
-          field("name", nonnull(string), ~args=[], ~resolve=(_ctx, droid: StarWars.droid) =>
+          field(
+            "id",
+            nonnull(int),
+            ~args=[],
+            ~resolve=(_ctx, droid: StarWars.droid) =>
+            droid.id
+          ),
+          field(
+            "name",
+            nonnull(string),
+            ~args=[],
+            ~resolve=(_ctx, droid: StarWars.droid) =>
             droid.StarWars.name
           ),
           field(
@@ -86,7 +149,10 @@ and droidTypeLazy =
             droid.StarWars.appearsIn
           ),
           field(
-            "primaryFunction", nonnull(string), ~args=[], ~resolve=(_ctx, droid: StarWars.droid) =>
+            "primaryFunction",
+            nonnull(string),
+            ~args=[],
+            ~resolve=(_ctx, droid: StarWars.droid) =>
             droid.primaryFunction
           ),
           async_field(
@@ -96,7 +162,9 @@ and droidTypeLazy =
             ~resolve=(_ctx, droid: StarWars.droid) =>
             Js.Promise.(
               StarWars.getFriends(droid.friends)
-              |> then_(list => resolve(Belt.List.map(list, asCharacterInterface)))
+              |> then_(list =>
+                   resolve(Belt.List.map(list, asCharacterInterface))
+                 )
               |> then_(list => resolve(Ok(list)))
             )
           ),
@@ -137,7 +205,8 @@ let query =
         ~args=Arg.[arg("id", nonnull(int))],
         ~resolve=(_ctx, (), argId) => {
           let id = argId;
-          StarWarsData.getHuman(id) |> Js.Promise.(then_(human => resolve(Ok(human))));
+          StarWarsData.getHuman(id)
+          |> Js.Promise.(then_(human => resolve(Ok(human))));
         },
       ),
       async_field(
@@ -146,7 +215,8 @@ let query =
         ~args=Arg.[arg("id", nonnull(int))],
         ~resolve=(_ctx, (), argId) => {
           let id = argId;
-          StarWarsData.getDroid(id) |> Js.Promise.(then_(human => resolve(Ok(human))));
+          StarWarsData.getDroid(id)
+          |> Js.Promise.(then_(human => resolve(Ok(human))));
         },
       ),
     ])
@@ -187,12 +257,20 @@ let mutation =
       async_field(
         "updateCharacterName",
         nonnull(updateCharacterResponse),
-        ~args=Arg.[arg("characterId", nonnull(int)), arg("name", nonnull(string))],
-        ~resolve=(_ctx, (), charId, name) =>
-        StarWarsData.updateCharacterName(charId, name)
-        |> Js.Promise.(then_(x => resolve(Ok(x))))
+        ~args=
+          Arg.[
+            arg("characterId", nonnull(int)),
+            arg("name", nonnull(string)),
+          ],
+        ~resolve=(ctx, (), charId, name) =>
+        switch (ctx) {
+        | Some(_userId) =>
+          StarWarsData.updateCharacterName(charId, name)
+          |> Js.Promise.(then_(x => resolve(Ok(x))))
+        | None => Js.Promise.resolve(Error(Error.Unauthenticated))
+        }
       ),
     ])
   );
 
-let schema: Schema.schema(unit) = Schema.create(query, ~mutation);
+let schema: Schema.schema(option(string)) = Schema.create(query, ~mutation);

@@ -5,5 +5,8 @@ module Future = {
   let ok = x => value(Belt.Result.Ok(x));
 };
 
-module Schema = Graphql.Schema.Make(Future);
+module Make = (Error: Graphql.Schema.Error) => {
+  include Graphql.Schema.Make(Future, Error);
+};
+
 module Language = Graphql.Language;

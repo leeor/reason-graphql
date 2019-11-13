@@ -10,5 +10,8 @@ module Promise = {
   let ok = a => return(Belt.Result.Ok(a));
 };
 
-module Schema = Graphql.Schema.Make(Promise);
+module Make = (Error: Graphql.Schema.Error) => {
+  include Graphql.Schema.Make(Promise, Error);
+};
+
 module Language = Graphql.Language;
