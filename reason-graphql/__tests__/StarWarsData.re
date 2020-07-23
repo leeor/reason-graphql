@@ -105,10 +105,6 @@ let updateCharacterName = (id, name): Js.Promise.t(updateCharacterResult) => {
     ));
 };
 
-let rec futureAll = fun 
-    | [] => Future.value([])
-    | [x, ...xs] => Future.flatMap(futureAll(xs), xs' => Future.map(x, x' => [x', ...xs']));
-
 let getFriends = ids => {
   Belt.List.map(ids, id => {
     id |> getCharacter |> Js.Promise.(then_(x => resolve(Belt.Option.getExn(x))))
